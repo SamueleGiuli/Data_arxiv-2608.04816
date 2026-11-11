@@ -1,0 +1,42 @@
+"""Fig. 1: Z(lambda)/Z(lambda=0) at omega0 = 0.2D, ghost-RISB (B=1,3,5) vs DMFT.
+Usage: python plot_Fig1.py   (reads Fig1_Z_vs_lambda.h5, writes Fig1_Z_vs_lambda.pdf)
+"""
+import h5py
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.lines import Line2D
+
+US = [0.5, 1.0, 1.5, 2.0]
+U_MARK = {0.5: "o", 1.0: "s", 1.5: "v", 2.0: "D"}
+GREENS = cm.Greens(np.linspace(0.3, 0.9, 3))
+B_STYLE = {1: (GREENS[0], "-"), 3: (GREENS[1], "--"), 5: (GREENS[2], "-.")}
+
+h = h5py.File("Fig1_Z_vs_lambda.h5", "r")
+fig, ax = plt.subplots(figsize=(4.2, 3.6))
+for B in (1, 3, 5):
+    c, ls = B_STYLE[B]
+    for U in US:
+        d = h[f"U_{U:g}/B{B}"]
+        Z = d["Z"][:]
+        ax.plot(d["lambda"][:], Z / Z[0], color=c, ls=ls, marker=U_MARK[U], ms=5, mfc=c, mec=c,
+                mew=1.3, alpha=0.9)
+for U in US:
+    d = h[f"U_{U:g}/DMFT"]
+    Zr = d["Z_ratio"][:]
+    ax.plot(d["lambda"][:], Zr / Zr[0], color="black", ls=":", marker=U_MARK[U], ms=5, mfc="none",
+            mec="black", mew=1.3)
+    ax.scatter([], [], marker=U_MARK[U], color="gray", alpha=0.5, label=rf"$U={U:.1f}D$")
+
+ax.set_xlabel(r"$\lambda$")
+ax.set_ylabel(r"$Z(\lambda)/Z(\lambda=0)$")
+ax.set_xlim(0, 1)
+ax.set_ylim(0.15, 1.25)
+ax.set_xticks(np.arange(0, 1.01, 0.1))
+ax.tick_params(which="both", direction="in", top=True, right=True, length=7)
+leg1 = ax.legend(loc="lower left", fancybox=False, framealpha=1, edgecolor="black", markerfirst=False)
+ax.legend(handles=[Line2D([0], [0], color="black", lw=2, ls=":", label="DMFT")] +
+          [Line2D([0], [0], color=B_STYLE[B][0], lw=2, ls=B_STYLE[B][1], label=rf"$\mathcal{{B}}={B}$")
+           for B in (5, 3, 1)], loc="lower right")
+ax.add_artist(leg1)
+fig.savefig("Fig1_Z_vs_lambda.pdf", bbox_inches="tight")
